@@ -34,6 +34,9 @@ import {
 } from './utils/retrieve-workspace-files';
 import { getPlugins } from './plugins/get-plugins';
 import { logger } from '../utils/logger';
+import { FileLock } from '../utils/file-lock';
+import { join } from 'path';
+import { workspaceDataDirectory } from '../utils/cache-directory';
 
 /**
  * Synchronously reads the latest cached copy of the workspace's ProjectGraph.
@@ -203,6 +206,20 @@ export function handleProjectGraphError(opts: { exitOnError: boolean }, e) {
   }
 }
 
+async function readCachedGraphAndHydrateFileMap() {
+  const graph = readCachedProjectGraph();
+  const projectRootMap = Object.fromEntries(
+    Object.entries(graph.nodes).map(([project, { data }]) => [
+      data.root,
+      project,
+    ])
+  );
+  const { allWorkspaceFiles, fileMap, rustReferences } =
+    await retrieveWorkspaceFiles(workspaceRoot, projectRootMap);
+  hydrateFileMap(fileMap, allWorkspaceFiles, rustReferences);
+  return graph;
+}
+
 /**
  * Computes and returns a ProjectGraph.
  *
@@ -232,18 +249,8 @@ export async function createProjectGraphAsync(
 ): Promise<ProjectGraph> {
   if (process.env.NX_FORCE_REUSE_CACHED_GRAPH === 'true') {
     try {
-      const graph = readCachedProjectGraph();
-      const projectRootMap = Object.fromEntries(
-        Object.entries(graph.nodes).map(([project, { data }]) => [
-          data.root,
-          project,
-        ])
-      );
-      const { allWorkspaceFiles, fileMap, rustReferences } =
-        await retrieveWorkspaceFiles(workspaceRoot, projectRootMap);
-      hydrateFileMap(fileMap, allWorkspaceFiles, rustReferences);
-      return graph;
       // If no cached graph is found, we will fall through to the normal flow
+      return readCachedGraphAndHydrateFileMap();
     } catch (e) {
       logger.verbose('Unable to use cached project graph', e);
     }
@@ -264,6 +271,15 @@ export async function createProjectGraphAndSourceMapsAsync(
   performance.mark('create-project-graph-async:start');
 
   if (!daemonClient.enabled()) {
+    const lock = new FileLock(join(workspaceDataDirectory, 'project-graph'));
+    if (lock.locked) {
+      logger.verbose(
+        'Waiting for graph construction in another process to complete'
+      );
+      await lock.wait();
+      return { projectGraph: readCachedGraphAndHydrateFileMap() };
+    }
+    lock.lock();
     try {
       const res = await buildProjectGraphAndSourceMapsWithoutDaemon();
       performance.measure(
@@ -287,6 +303,7 @@ export async function createProjectGraphAndSourceMapsAsync(
         'create-project-graph-async:start',
         'create-project-graph-async:end'
       );
+      lock.unlock();
       return res;
     } catch (e) {
       handleProjectGraphError(opts, e);
