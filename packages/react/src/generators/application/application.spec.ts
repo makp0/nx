@@ -1279,7 +1279,7 @@ describe('app', () => {
     beforeEach(() => {
       appTree = createTreeWithEmptyWorkspace();
       updateJson(appTree, 'package.json', (json) => {
-        json.workspaces = ['packages/**', 'apps/**'];
+        json.workspaces = ['packages/*', 'apps/*'];
         return json;
       });
       writeJson(appTree, 'tsconfig.base.json', {
@@ -1447,11 +1447,6 @@ describe('app', () => {
             "src/**/*.test.js",
             "src/**/*.d.ts",
           ],
-          "references": [
-            {
-              "path": "../myapp",
-            },
-          ],
         }
       `);
     });
@@ -1487,10 +1482,10 @@ describe('app', () => {
 
       const packageJson = readJson(appTree, 'package.json');
       expect(packageJson.workspaces).toEqual([
-        'packages/**',
-        'apps/**',
+        'packages/*',
+        'apps/*',
         'myapp',
-        'libs/**',
+        'libs/*',
       ]);
     });
 
@@ -1524,11 +1519,24 @@ describe('app', () => {
         unitTestRunner: 'none',
         e2eTestRunner: 'none',
       });
+      await applicationGenerator(appTree, {
+        directory: 'packages/shared/util',
+        addPlugin: true,
+        linter: Linter.EsLint,
+        style: 'none',
+        bundler: 'vite',
+        unitTestRunner: 'none',
+        e2eTestRunner: 'none',
+      });
 
       const pnpmContent = appTree.read('pnpm-workspace.yaml', 'utf-8');
       const pnpmWorkspaceFile = load(pnpmContent);
 
-      expect(pnpmWorkspaceFile.packages).toEqual(['myapp', 'apps/**']);
+      expect(pnpmWorkspaceFile.packages).toEqual([
+        'myapp',
+        'apps/*',
+        'packages/shared/*',
+      ]);
     });
   });
 
