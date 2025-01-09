@@ -3,6 +3,7 @@ import { PseudoIPCServer } from './pseudo-ipc';
 import { getForkedProcessOsSocketPath } from '../daemon/socket-utils';
 import { Serializable } from 'child_process';
 import * as os from 'os';
+import { registerCleanupFn } from '../utils/cleanup';
 
 let pseudoTerminal: PseudoTerminal;
 
@@ -111,19 +112,7 @@ export class PseudoTerminal {
   }
 
   private setupProcessListeners() {
-    const shutdown = () => {
-      this.shutdownPseudoIPC();
-    };
-    process.on('SIGINT', () => {
-      this.shutdownPseudoIPC();
-    });
-    process.on('SIGTERM', () => {
-      this.shutdownPseudoIPC();
-    });
-    process.on('SIGHUP', () => {
-      this.shutdownPseudoIPC();
-    });
-    process.on('exit', () => {
+    registerCleanupFn(() => {
       this.shutdownPseudoIPC();
     });
   }

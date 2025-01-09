@@ -16,9 +16,9 @@ export declare class ChildProcess {
 export declare class FileLock {
   locked: boolean
   constructor(lockFilePath: string)
-  lock(): void
   unlock(): void
   wait(): Promise<void>
+  lock(): void
 }
 
 export declare class HashPlanner {

@@ -9,6 +9,7 @@ import { Task } from '../../config/task-graph';
 import { prettyTime } from './pretty-time';
 import { formatFlags, formatTargetsAndProjects } from './formatting-utils';
 import { viewLogsFooterRows } from './view-logs-utils';
+import { registerCleanupFn } from '../../utils/cleanup';
 
 const LEFT_PAD = `   `;
 const SPACER = `  `;
@@ -54,10 +55,7 @@ export async function createRunManyDynamicOutputRenderer({
     }
   }
 
-  process.on('exit', () => clearRenderInterval());
-  process.on('SIGINT', () => clearRenderInterval());
-  process.on('SIGTERM', () => clearRenderInterval());
-  process.on('SIGHUP', () => clearRenderInterval());
+  registerCleanupFn(() => clearRenderInterval());
 
   const lifeCycle = {} as Partial<LifeCycle>;
   const isVerbose = overrides.verbose === true;

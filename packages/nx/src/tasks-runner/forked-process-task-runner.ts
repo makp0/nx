@@ -20,6 +20,7 @@ import {
   PseudoTerminal,
 } from './pseudo-terminal';
 import { signalToCode } from '../utils/exit-codes';
+import { registerCleanupFn } from '../utils/cleanup';
 
 const forkScript = join(__dirname, './fork.js');
 
@@ -498,40 +499,12 @@ export class ForkedProcessTaskRunner {
       });
     });
 
-    // Terminate any task processes on exit
-    process.on('exit', () => {
+    registerCleanupFn((signal) => {
       this.processes.forEach((p) => {
         if ('connected' in p ? p.connected : p.isAlive) {
-          p.kill();
+          p.kill(signal);
         }
       });
-    });
-    process.on('SIGINT', () => {
-      this.processes.forEach((p) => {
-        if ('connected' in p ? p.connected : p.isAlive) {
-          p.kill('SIGTERM');
-        }
-      });
-      // we exit here because we don't need to write anything to cache.
-      process.exit(signalToCode('SIGINT'));
-    });
-    process.on('SIGTERM', () => {
-      this.processes.forEach((p) => {
-        if ('connected' in p ? p.connected : p.isAlive) {
-          p.kill('SIGTERM');
-        }
-      });
-      // no exit here because we expect child processes to terminate which
-      // will store results to the cache and will terminate this process
-    });
-    process.on('SIGHUP', () => {
-      this.processes.forEach((p) => {
-        if ('connected' in p ? p.connected : p.isAlive) {
-          p.kill('SIGTERM');
-        }
-      });
-      // no exit here because we expect child processes to terminate which
-      // will store results to the cache and will terminate this process
     });
   }
 }

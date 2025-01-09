@@ -9,11 +9,11 @@ import {
   PseudoTerminal,
   PseudoTtyProcess,
 } from '../../tasks-runner/pseudo-terminal';
-import { signalToCode } from '../../utils/exit-codes';
 import {
   loadAndExpandDotEnvFile,
   unloadDotEnvFile,
 } from '../../tasks-runner/task-env';
+import { registerCleanupFn } from '../../utils/cleanup';
 
 export const LARGE_BUFFER = 1024 * 1000000;
 let pseudoTerminal: PseudoTerminal | null;
@@ -640,40 +640,12 @@ function registerProcessListener() {
     });
   });
 
-  // Terminate any task processes on exit
-  process.on('exit', () => {
+  registerCleanupFn((signal) => {
     childProcesses.forEach((p) => {
       if ('connected' in p ? p.connected : p.isAlive) {
-        p.kill();
+        p.kill(signal);
       }
     });
-  });
-  process.on('SIGINT', () => {
-    childProcesses.forEach((p) => {
-      if ('connected' in p ? p.connected : p.isAlive) {
-        p.kill('SIGTERM');
-      }
-    });
-    // we exit here because we don't need to write anything to cache.
-    process.exit(signalToCode('SIGINT'));
-  });
-  process.on('SIGTERM', () => {
-    childProcesses.forEach((p) => {
-      if ('connected' in p ? p.connected : p.isAlive) {
-        p.kill('SIGTERM');
-      }
-    });
-    // no exit here because we expect child processes to terminate which
-    // will store results to the cache and will terminate this process
-  });
-  process.on('SIGHUP', () => {
-    childProcesses.forEach((p) => {
-      if ('connected' in p ? p.connected : p.isAlive) {
-        p.kill('SIGTERM');
-      }
-    });
-    // no exit here because we expect child processes to terminate which
-    // will store results to the cache and will terminate this process
   });
 }
 

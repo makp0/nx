@@ -277,14 +277,6 @@ export async function createProjectGraphAndSourceMapsAsync(
       join(workspaceDataDirectory, 'project-graph.lock')
     );
 
-    function cleanupFileLock() {
-      try {
-        lock.unlock();
-      } catch {}
-    }
-
-    process.on('exit', cleanupFileLock);
-
     if (lock.locked) {
       logger.verbose(
         'Waiting for graph construction in another process to complete'

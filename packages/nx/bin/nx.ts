@@ -21,7 +21,7 @@ import { performance } from 'perf_hooks';
 import { setupWorkspaceContext } from '../src/utils/workspace-context';
 import { daemonClient } from '../src/daemon/client/client';
 import { removeDbConnections } from '../src/utils/db-connection';
-import { signalToCode } from '../src/utils/exit-codes';
+import { registerCleanupFn } from '../src/utils/cleanup';
 
 function main() {
   if (
@@ -276,26 +276,8 @@ const getLatestVersionOfNx = ((fn: () => string) => {
   return () => cache || (cache = fn());
 })(_getLatestVersionOfNx);
 
-function nxCleanup(signal?: NodeJS.Signals) {
+registerCleanupFn(() => {
   removeDbConnections();
-  if (signal) {
-    process.exit(signalToCode(signal));
-  } else {
-    process.exit();
-  }
-}
-
-process.on('exit', () => {
-  nxCleanup();
-});
-process.on('SIGINT', () => {
-  nxCleanup('SIGINT');
-});
-process.on('SIGTERM', () => {
-  nxCleanup('SIGTERM');
-});
-process.on('SIGHUP', () => {
-  nxCleanup('SIGHUP');
 });
 
 main();
