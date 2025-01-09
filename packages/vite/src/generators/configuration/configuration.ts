@@ -50,10 +50,15 @@ export async function viteConfigurationGeneratorInternal(
   const projectConfig = readProjectConfiguration(tree, schema.project);
   const { targets, root: projectRoot } = projectConfig;
 
+  const isLib = tree.exists(
+    joinPathFragments(projectRoot, 'tsconfig.lib.json')
+  );
   const projectType =
-    schema.projectType ?? projectConfig.projectType ?? 'library';
+    schema.projectType ?? projectConfig.projectType ?? isLib
+      ? 'library'
+      : 'application';
 
-  schema.includeLib ??= projectType === 'library';
+  schema.includeLib ??= isLib;
 
   // Setting default to jsdom since it is the most common use case (React, Web).
   // The @nx/js:lib generator specifically sets this to node to be more generic.
@@ -105,20 +110,17 @@ export async function viteConfigurationGeneratorInternal(
       }
     }
   }
-  if (projectType === 'library') {
+  const tsconfigLibPath = joinPathFragments(projectRoot, 'tsconfig.lib.json');
+  if (tree.exists(tsconfigLibPath)) {
     // update tsconfig.lib.json to include vite/client
-    updateJson(
-      tree,
-      joinPathFragments(projectRoot, 'tsconfig.lib.json'),
-      (json) => {
-        json.compilerOptions ??= {};
-        json.compilerOptions.types ??= [];
-        if (!json.compilerOptions.types.includes('vite/client')) {
-          json.compilerOptions.types.push('vite/client');
-        }
-        return json;
+    updateJson(tree, tsconfigLibPath, (json) => {
+      json.compilerOptions ??= {};
+      json.compilerOptions.types ??= [];
+      if (!json.compilerOptions.types.includes('vite/client')) {
+        json.compilerOptions.types.push('vite/client');
       }
-    );
+      return json;
+    });
   }
 
   if (!schema.newProject) {

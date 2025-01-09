@@ -40,13 +40,10 @@ export function addProject(host: Tree, options: NormalizedSchema) {
 
   if (options.isUsingTsSolutionConfig) {
     writeJson(host, joinPathFragments(options.appProjectRoot, 'package.json'), {
-      name: getImportPath(host, options.name),
+      name: options.projectName,
       version: '0.0.1',
       private: true,
       nx: {
-        name: options.name,
-        projectType: 'application',
-        sourceRoot: `${options.appProjectRoot}/src`,
         tags: options.parsedTags?.length ? options.parsedTags : undefined,
       },
     });

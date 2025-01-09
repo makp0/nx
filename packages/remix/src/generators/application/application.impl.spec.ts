@@ -339,7 +339,7 @@ describe('Remix Application', () => {
 
     it('should add project references when using TS solution', async () => {
       await applicationGenerator(tree, {
-        directory: 'myapp',
+        directory: 'apps/myapp',
         e2eTestRunner: 'playwright',
         unitTestRunner: 'jest',
         addPlugin: true,
@@ -347,7 +347,7 @@ describe('Remix Application', () => {
       });
 
       // Make sure keys are in idiomatic order
-      expect(Object.keys(readJson(tree, 'myapp/package.json')))
+      expect(Object.keys(readJson(tree, 'apps/myapp/package.json')))
         .toMatchInlineSnapshot(`
         [
           "name",
@@ -361,7 +361,7 @@ describe('Remix Application', () => {
           "devDependencies",
         ]
       `);
-      expect(readJson(tree, 'myapp/package.json')).toMatchInlineSnapshot(`
+      expect(readJson(tree, 'apps/myapp/package.json')).toMatchInlineSnapshot(`
         {
           "dependencies": {
             "@remix-run/node": "^2.14.0",
@@ -379,10 +379,8 @@ describe('Remix Application', () => {
           "engines": {
             "node": ">=20",
           },
-          "name": "myapp",
+          "name": "@proj/myapp",
           "nx": {
-            "projectType": "application",
-            "sourceRoot": "myapp",
             "tags": [
               "foo",
             ],
@@ -397,16 +395,16 @@ describe('Remix Application', () => {
       expect(readJson(tree, 'tsconfig.json').references).toMatchInlineSnapshot(`
         [
           {
-            "path": "./myapp-e2e",
+            "path": "./apps/myapp-e2e",
           },
           {
-            "path": "./myapp",
+            "path": "./apps/myapp",
           },
         ]
       `);
-      expect(readJson(tree, 'myapp/tsconfig.json')).toMatchInlineSnapshot(`
+      expect(readJson(tree, 'apps/myapp/tsconfig.json')).toMatchInlineSnapshot(`
         {
-          "extends": "../tsconfig.base.json",
+          "extends": "../../tsconfig.base.json",
           "files": [],
           "include": [],
           "references": [
@@ -419,7 +417,8 @@ describe('Remix Application', () => {
           ],
         }
       `);
-      expect(readJson(tree, 'myapp/tsconfig.app.json')).toMatchInlineSnapshot(`
+      expect(readJson(tree, 'apps/myapp/tsconfig.app.json'))
+        .toMatchInlineSnapshot(`
         {
           "compilerOptions": {
             "allowJs": true,
@@ -456,14 +455,11 @@ describe('Remix Application', () => {
             "tests/**/*.test.js",
             "tests/**/*.spec.jsx",
             "tests/**/*.test.jsx",
-            "jest.config.ts",
-            "src/**/*.spec.ts",
-            "src/**/*.test.ts",
             "eslint.config.js",
             "eslint.config.cjs",
             "eslint.config.mjs",
           ],
-          "extends": "../tsconfig.base.json",
+          "extends": "../../tsconfig.base.json",
           "include": [
             "app/**/*.ts",
             "app/**/*.tsx",
@@ -476,7 +472,8 @@ describe('Remix Application', () => {
           ],
         }
       `);
-      expect(readJson(tree, 'myapp/tsconfig.spec.json')).toMatchInlineSnapshot(`
+      expect(readJson(tree, 'apps/myapp/tsconfig.spec.json'))
+        .toMatchInlineSnapshot(`
         {
           "compilerOptions": {
             "jsx": "react-jsx",
@@ -488,7 +485,7 @@ describe('Remix Application', () => {
               "node",
             ],
           },
-          "extends": "../tsconfig.base.json",
+          "extends": "../../tsconfig.base.json",
           "include": [
             "vite.config.ts",
             "vitest.config.ts",
@@ -512,7 +509,8 @@ describe('Remix Application', () => {
           ],
         }
       `);
-      expect(readJson(tree, 'myapp-e2e/tsconfig.json')).toMatchInlineSnapshot(`
+      expect(readJson(tree, 'apps/myapp-e2e/tsconfig.json'))
+        .toMatchInlineSnapshot(`
         {
           "compilerOptions": {
             "allowJs": true,
@@ -526,7 +524,7 @@ describe('Remix Application', () => {
             "eslint.config.mjs",
             "eslint.config.cjs",
           ],
-          "extends": "../tsconfig.base.json",
+          "extends": "../../tsconfig.base.json",
           "include": [
             "**/*.ts",
             "**/*.js",
@@ -537,6 +535,41 @@ describe('Remix Application', () => {
             "src/**/*.test.js",
             "src/**/*.d.ts",
           ],
+        }
+      `);
+    });
+
+    it('should skip nx property in package.json when no tags are provided', async () => {
+      await applicationGenerator(tree, {
+        directory: 'apps/myapp',
+        e2eTestRunner: 'playwright',
+        unitTestRunner: 'jest',
+        addPlugin: true,
+      });
+
+      expect(readJson(tree, 'apps/myapp/package.json')).toMatchInlineSnapshot(`
+        {
+          "dependencies": {
+            "@remix-run/node": "^2.14.0",
+            "@remix-run/react": "^2.14.0",
+            "@remix-run/serve": "^2.14.0",
+            "isbot": "^4.4.0",
+            "react": "^18.2.0",
+            "react-dom": "^18.2.0",
+          },
+          "devDependencies": {
+            "@remix-run/dev": "^2.14.0",
+            "@types/react": "^18.2.0",
+            "@types/react-dom": "^18.2.0",
+          },
+          "engines": {
+            "node": ">=20",
+          },
+          "name": "@proj/myapp",
+          "private": true,
+          "scripts": {},
+          "sideEffects": false,
+          "type": "module",
         }
       `);
     });

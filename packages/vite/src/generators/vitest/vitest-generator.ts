@@ -117,7 +117,7 @@ getTestBed().initTestEnvironment(
         tree,
         {
           project: schema.project,
-          includeLib: projectType === 'library',
+          includeLib: tree.exists(joinPathFragments(root, 'tsconfig.lib.json')),
           includeVitest: true,
           inSourceTests: schema.inSourceTests,
           rollupOptionsExternal: [
@@ -141,7 +141,7 @@ getTestBed().initTestEnvironment(
         {
           ...schema,
           includeVitest: true,
-          includeLib: projectType === 'library',
+          includeLib: tree.exists(joinPathFragments(root, 'tsconfig.lib.json')),
         },
         true
       );

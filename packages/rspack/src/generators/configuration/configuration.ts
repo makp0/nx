@@ -73,7 +73,7 @@ export async function configurationGenerator(
     if (
       alreadyHasNxRspackTargets.build &&
       (alreadyHasNxRspackTargets.serve ||
-        projectType === 'library' ||
+        tree.exists(joinPathFragments(root, 'tsconfig.lib.json')) ||
         options.framework === 'nest')
     ) {
       throw new Error(

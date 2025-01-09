@@ -99,7 +99,7 @@ export async function lintProjectGeneratorInternal(
     lintFilePatterns &&
     lintFilePatterns.length &&
     !lintFilePatterns.includes('{projectRoot}') &&
-    isBuildableLibraryProject(projectConfig)
+    isBuildableLibraryProject(tree, projectConfig)
   ) {
     lintFilePatterns.push(`{projectRoot}/package.json`);
   }
@@ -175,7 +175,7 @@ export async function lintProjectGeneratorInternal(
 
   // Buildable libs need source analysis enabled for linting `package.json`.
   if (
-    isBuildableLibraryProject(projectConfig) &&
+    isBuildableLibraryProject(tree, projectConfig) &&
     !isJsAnalyzeSourceFilesEnabled(tree)
   ) {
     updateJson(tree, 'nx.json', (json) => {
@@ -225,7 +225,7 @@ function createEsLintConfiguration(
 
   const addDependencyChecks =
     options.addPackageJsonDependencyChecks ||
-    isBuildableLibraryProject(projectConfig);
+    isBuildableLibraryProject(tree, projectConfig);
 
   const overrides: Linter.ConfigOverride<Linter.RulesRecord>[] = useFlatConfig(
     tree
@@ -328,13 +328,12 @@ function isJsAnalyzeSourceFilesEnabled(tree: Tree): boolean {
 }
 
 function isBuildableLibraryProject(
+  tree: Tree,
   projectConfig: ProjectConfiguration
 ): boolean {
-  return (
-    projectConfig.projectType === 'library' &&
-    projectConfig.targets?.build &&
-    !!projectConfig.targets.build
-  );
+  // Our libs are always generated with this tsconfig file.
+  const isLib = tree.exists(join(projectConfig.root, 'tsconfig.lib.json'));
+  return isLib && projectConfig.targets?.build && !!projectConfig.targets.build;
 }
 
 /**

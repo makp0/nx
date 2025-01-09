@@ -50,11 +50,16 @@ export async function monorepoGenerator(tree: Tree, options: {}) {
   }
 
   for (const project of projectsToMove) {
+    const projectType =
+      project.projectType ??
+      tree.exists(joinPathFragments(project.root, 'tsconfig.app.json'))
+        ? 'application'
+        : 'library';
     await moveGenerator(tree, {
       projectName: project.name,
       newProjectName: project.name,
       destination:
-        project.projectType === 'application'
+        projectType === 'application'
           ? joinPathFragments(
               appsDir,
               project.root === '.' ? project.name : project.root
@@ -63,7 +68,7 @@ export async function monorepoGenerator(tree: Tree, options: {}) {
               libsDir,
               project.root === '.' ? project.name : project.root
             ),
-      updateImportPath: project.projectType === 'library',
+      updateImportPath: projectType === 'library',
     });
   }
 }

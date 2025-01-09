@@ -40,7 +40,7 @@ async function addFiles(host: Tree, options: NormalizedSchema) {
 }
 
 function updatePluginConfig(host: Tree, options: NormalizedSchema) {
-  const project = readProjectConfiguration(host, options.name);
+  const project = readProjectConfiguration(host, options.projectName);
 
   if (project.targets.build) {
     if (options.isTsSolutionSetup && options.bundler === 'tsc') {
@@ -68,7 +68,7 @@ function updatePluginConfig(host: Tree, options: NormalizedSchema) {
       );
     }
 
-    updateProjectConfiguration(host, options.name, project);
+    updateProjectConfiguration(host, options.projectName, project);
   }
 }
 
@@ -132,7 +132,7 @@ export async function pluginGeneratorInternal(host: Tree, schema: Schema) {
   if (options.e2eTestRunner !== 'none') {
     tasks.push(
       await e2eProjectGenerator(host, {
-        pluginName: options.name,
+        pluginName: options.projectName,
         projectDirectory: options.projectDirectory,
         pluginOutputPath: joinPathFragments(
           'dist',
@@ -149,7 +149,7 @@ export async function pluginGeneratorInternal(host: Tree, schema: Schema) {
   }
 
   if (options.linter === Linter.EsLint && !options.skipLintChecks) {
-    await pluginLintCheckGenerator(host, { projectName: options.name });
+    await pluginLintCheckGenerator(host, { projectName: options.projectName });
   }
 
   if (!options.skipFormat) {

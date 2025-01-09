@@ -1,4 +1,8 @@
-import { type ProjectConfiguration, type Tree } from '@nx/devkit';
+import {
+  joinPathFragments,
+  type ProjectConfiguration,
+  type Tree,
+} from '@nx/devkit';
 import { getNpmScope } from '../../../utilities/get-import-path';
 import type { NormalizedSchema, Schema } from '../schema';
 import { normalizePathSlashes } from './utils';
@@ -35,7 +39,7 @@ async function determineProjectNameAndRootOptions(
   options: Schema,
   projectConfiguration: ProjectConfiguration
 ): Promise<ProjectNameAndRootOptions> {
-  validateName(options.newProjectName, projectConfiguration);
+  validateName(tree, options.newProjectName, projectConfiguration);
   const projectNameAndRootOptions = getProjectNameAndRootOptions(
     tree,
     options,
@@ -46,6 +50,7 @@ async function determineProjectNameAndRootOptions(
 }
 
 function validateName(
+  tree: Tree,
   name: string | undefined,
   projectConfiguration: ProjectConfiguration
 ): void {
@@ -67,14 +72,24 @@ function validateName(
     '(?:^@[a-zA-Z0-9-*~][a-zA-Z0-9-*._~]*\\/[a-zA-Z0-9-~][a-zA-Z0-9-._~]*|^[a-zA-Z][^:]*)$';
   const appPattern = '^[a-zA-Z][^:]*$';
 
-  if (projectConfiguration.projectType === 'application') {
+  if (
+    projectConfiguration.projectType === 'application' ||
+    tree.exists(
+      joinPathFragments(projectConfiguration.root, 'tsconfig.app.json')
+    )
+  ) {
     const validationRegex = new RegExp(appPattern);
     if (!validationRegex.test(name)) {
       throw new Error(
         `The new project name should match the pattern "${appPattern}". The provided value "${name}" does not match.`
       );
     }
-  } else if (projectConfiguration.projectType === 'library') {
+  } else if (
+    projectConfiguration.projectType === 'library' ||
+    tree.exists(
+      joinPathFragments(projectConfiguration.root, 'tsconfig.lib.json')
+    )
+  ) {
     const validationRegex = new RegExp(libraryPattern);
     if (!validationRegex.test(name)) {
       throw new Error(
