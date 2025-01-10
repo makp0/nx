@@ -80,10 +80,15 @@ async function load(path: string): Promise<any> {
     // Modules are CJS unless it is named `.mjs` or `package.json` sets type to "module".
     return require(path);
   } catch (e: any) {
-    if (e.code === 'ERR_REQUIRE_ESM') {
-      // If `require` fails to load ESM, try dynamic `import()`. ESM requires file url protocol for handling absolute paths.
-      const pathAsFileUrl = pathToFileURL(path).pathname;
-      return await dynamicImport(`${pathAsFileUrl}?t=${Date.now()}`);
+    if (e.code === 'ERR_REQUIRE_ESM' || e.name === 'TypeError') {
+      try {
+        // If `require` fails to load ESM, try dynamic `import()`. ESM requires file url protocol for handling absolute paths.
+        const pathAsFileUrl = pathToFileURL(path).pathname;
+        return await dynamicImport(`${pathAsFileUrl}?t=${Date.now()}`);
+      } catch (e: any) {
+        // If dynamic `import()` fails, re-throw the error
+        throw e;
+      }
     }
 
     // Re-throw all other errors
