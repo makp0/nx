@@ -135,7 +135,7 @@ Returns the list of currently recorded changes.
 
 ### read
 
-▸ **read**(`filePath`): `Buffer`\<`ArrayBufferLike`\>
+▸ **read**(`filePath`): `Buffer`
 
 Read the contents of a file.
 
@@ -147,7 +147,7 @@ Read the contents of a file.
 
 #### Returns
 
-`Buffer`\<`ArrayBufferLike`\>
+`Buffer`
 
 ▸ **read**(`filePath`, `encoding`): `string`
 
@@ -193,11 +193,11 @@ Update the contents of a file or create a new file.
 
 #### Parameters
 
-| Name       | Type                                      |
-| :--------- | :---------------------------------------- |
-| `filePath` | `string`                                  |
-| `content`  | `string` \| `Buffer`\<`ArrayBufferLike`\> |
-| `options?` | `TreeWriteOptions`                        |
+| Name       | Type                 |
+| :--------- | :------------------- |
+| `filePath` | `string`             |
+| `content`  | `string` \| `Buffer` |
+| `options?` | `TreeWriteOptions`   |
 
 #### Returns
 
