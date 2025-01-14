@@ -34,7 +34,12 @@ import {
 } from '../utils/sync-generators';
 import { workspaceRoot } from '../utils/workspace-root';
 import { createTaskGraph } from './create-task-graph';
-import { CompositeLifeCycle, LifeCycle, TaskResult } from './life-cycle';
+import {
+  CompositeLifeCycle,
+  LifeCycle,
+  TaskResult,
+  TaskResults,
+} from './life-cycle';
 import { createRunManyDynamicOutputRenderer } from './life-cycles/dynamic-run-many-terminal-output-life-cycle';
 import { createRunOneDynamicOutputRenderer } from './life-cycles/dynamic-run-one-terminal-output-life-cycle';
 import { StaticRunManyTerminalOutputLifeCycle } from './life-cycles/static-run-many-terminal-output-life-cycle';
@@ -55,6 +60,8 @@ import { shouldStreamOutput } from './utils';
 import chalk = require('chalk');
 import type { Observable } from 'rxjs';
 import { printPowerpackLicense } from '../utils/powerpack';
+import { getPlugins } from '../project-graph/plugins/get-plugins';
+import { runPostRun, runPreRun } from '../project-graph/plugins/run-hooks';
 
 async function getTerminalOutputLifeCycle(
   initiatingProject: string,
@@ -177,6 +184,13 @@ export async function runCommand(
   const status = await handleErrors(
     process.env.NX_VERBOSE_LOGGING === 'true',
     async () => {
+      const plugins = await getPlugins();
+
+      await runPreRun(plugins, {
+        workspaceRoot,
+        nxJsonConfiguration: nxJson,
+      });
+
       const taskResults = await runCommandForTasks(
         projectsToRun,
         currentProjectGraph,
@@ -188,12 +202,20 @@ export async function runCommand(
         extraOptions
       );
 
-      return Object.values(taskResults).some(
+      const result = Object.values(taskResults).some(
         (taskResult) =>
           taskResult.status === 'failure' || taskResult.status === 'skipped'
       )
         ? 1
         : 0;
+
+      await runPostRun(plugins, {
+        taskResults,
+        workspaceRoot,
+        nxJsonConfiguration: nxJson,
+      });
+
+      return result;
     }
   );
 
@@ -209,7 +231,7 @@ export async function runCommandForTasks(
   initiatingProject: string | null,
   extraTargetDependencies: Record<string, (TargetDependencyConfig | string)[]>,
   extraOptions: { excludeTaskDependencies: boolean; loadDotEnvFiles: boolean }
-): Promise<{ [id: string]: TaskResult }> {
+): Promise<TaskResults> {
   const projectNames = projectsToRun.map((t) => t.name);
 
   const { projectGraph, taskGraph } = await ensureWorkspaceIsInSyncAndGetGraphs(

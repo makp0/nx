@@ -18,7 +18,10 @@ async function importPluginModule(pluginPath: string): Promise<NxPlugin> {
     m.default &&
     ('createNodes' in m.default ||
       'createNodesV2' in m.default ||
-      'createDependencies' in m.default)
+      'createDependencies' in m.default ||
+      'createMetadata' in m.default ||
+      'preRun' in m.default ||
+      'postRun' in m.default)
   ) {
     return m.default;
   }

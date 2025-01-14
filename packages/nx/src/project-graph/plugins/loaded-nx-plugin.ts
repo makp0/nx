@@ -11,9 +11,12 @@ import type {
   CreateNodesContextV2,
   CreateNodesResult,
   NxPluginV2,
+  PostRunContext,
+  PreRunContext,
   ProjectsMetadata,
 } from './public-api';
 import { createNodesFromFiles } from './utils';
+import type { TaskResults } from '../../tasks-runner/life-cycle';
 
 export class LoadedNxPlugin {
   readonly name: string;
@@ -35,6 +38,8 @@ export class LoadedNxPlugin {
     graph: ProjectGraph,
     context: CreateMetadataContext
   ) => Promise<ProjectsMetadata>;
+  readonly preRun?: (context: PreRunContext) => Promise<void>;
+  readonly postRun?: (context: PostRunContext) => Promise<void>;
 
   readonly options?: unknown;
   readonly include?: string[];
@@ -106,6 +111,16 @@ export class LoadedNxPlugin {
     if (plugin.createMetadata) {
       this.createMetadata = async (graph, context) =>
         plugin.createMetadata(graph, this.options, context);
+    }
+
+    if (plugin.preRun) {
+      this.preRun = async (context: PreRunContext) =>
+        plugin.preRun(this.options, context);
+    }
+
+    if (plugin.postRun) {
+      this.postRun = async (context: PostRunContext) =>
+        plugin.postRun(this.options, context);
     }
   }
 }

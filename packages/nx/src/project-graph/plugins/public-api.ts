@@ -1,16 +1,17 @@
 // This file represents the public API for plugins which live in nx.json's plugins array.
 // For methods to interact with plugins from within Nx, see `./internal-api.ts`.
 
-import {
+import type {
   FileMap,
   ProjectGraph,
   ProjectGraphExternalNode,
 } from '../../config/project-graph';
 
-import { ProjectConfiguration } from '../../config/workspace-json-project-json';
+import type { ProjectConfiguration } from '../../config/workspace-json-project-json';
 
-import { NxJsonConfiguration } from '../../config/nx-json';
-import { RawProjectGraphDependency } from '../project-graph-builder';
+import type { NxJsonConfiguration } from '../../config/nx-json';
+import type { RawProjectGraphDependency } from '../project-graph-builder';
+import type { TaskResults } from '../../tasks-runner/life-cycle';
 
 /**
  * Context for {@link CreateNodesFunction}
@@ -146,7 +147,7 @@ export type CreateMetadata<T = unknown> = (
 ) => ProjectsMetadata | Promise<ProjectsMetadata>;
 
 /**
- * A plugin for Nx which creates nodes and dependencies for the {@link ProjectGraph}
+ * A plugin which enhances the behavior of Nx
  */
 export type NxPluginV2<TOptions = unknown> = {
   name: string;
@@ -176,9 +177,37 @@ export type NxPluginV2<TOptions = unknown> = {
    * Provides a function to create metadata for the {@link ProjectGraph}
    */
   createMetadata?: CreateMetadata<TOptions>;
+
+  /**
+   * Provides a function to run before the Nx runs tasks
+   */
+  preRun?: PreRun<TOptions>;
+
+  /**
+   * Provides a function to run after the Nx runs tasks
+   */
+  postRun?: PostRun<TOptions>;
 };
 
+export type PreRunContext = {
+  readonly workspaceRoot: string;
+  readonly nxJsonConfiguration: NxJsonConfiguration;
+};
+export type PostRunContext = {
+  readonly workspaceRoot: string;
+  readonly nxJsonConfiguration: NxJsonConfiguration;
+  readonly taskResults: TaskResults;
+};
+
+export type PreRun<TOptions = unknown> = (
+  options: TOptions | undefined,
+  context: PreRunContext
+) => void | Promise<void>;
+export type PostRun<TOptions = unknown> = (
+  options: TOptions | undefined,
+  context: PostRunContext
+) => void | Promise<void>;
 /**
- * A plugin for Nx
+ * A plugin which enhances the behavior of Nx
  */
 export type NxPlugin = NxPluginV2;

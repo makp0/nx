@@ -4,10 +4,13 @@ import {
   CreateDependenciesContext,
   CreateMetadataContext,
   CreateNodesContextV2,
+  PreRunContext,
+  PostRunContext,
 } from '../public-api';
 import type { LoadedNxPlugin } from '../loaded-nx-plugin';
 import { Serializable } from 'child_process';
 import { Socket } from 'net';
+import type { TaskResults } from '../../../tasks-runner/life-cycle';
 
 export interface PluginWorkerLoadMessage {
   type: 'load';
@@ -31,6 +34,8 @@ export interface PluginWorkerLoadResult {
         hasCreateDependencies: boolean;
         hasProcessProjectGraph: boolean;
         hasCreateMetadata: boolean;
+        hasPreRun: boolean;
+        hasPostRun: boolean;
         success: true;
       }
     | {
@@ -110,17 +115,65 @@ export interface PluginCreateMetadataResult {
       };
 }
 
+export interface PluginWorkerPreRunMessage {
+  type: 'preRun';
+  payload: {
+    tx: string;
+    context: PreRunContext;
+  };
+}
+
+export interface PluginWorkerPreRunMessageResult {
+  type: 'preRunResult';
+  payload:
+    | {
+        tx: string;
+        success: true;
+      }
+    | {
+        success: false;
+        error: Error;
+        tx: string;
+      };
+}
+
+export interface PluginWorkerPostRunMessage {
+  type: 'postRun';
+  payload: {
+    tx: string;
+    context: PostRunContext;
+  };
+}
+
+export interface PluginWorkerPostRunMessageResult {
+  type: 'postRunResult';
+  payload:
+    | {
+        tx: string;
+        success: true;
+      }
+    | {
+        success: false;
+        error: Error;
+        tx: string;
+      };
+}
+
 export type PluginWorkerMessage =
   | PluginWorkerLoadMessage
   | PluginWorkerCreateNodesMessage
   | PluginCreateDependenciesMessage
-  | PluginCreateMetadataMessage;
+  | PluginCreateMetadataMessage
+  | PluginWorkerPreRunMessage
+  | PluginWorkerPostRunMessage;
 
 export type PluginWorkerResult =
   | PluginWorkerLoadResult
   | PluginWorkerCreateNodesResult
   | PluginCreateDependenciesResult
-  | PluginCreateMetadataResult;
+  | PluginCreateMetadataResult
+  | PluginWorkerPreRunMessageResult
+  | PluginWorkerPostRunMessageResult;
 
 export function isPluginWorkerMessage(
   message: Serializable
@@ -133,9 +186,11 @@ export function isPluginWorkerMessage(
       'load',
       'createNodes',
       'createDependencies',
-      'processProjectGraph',
       'createMetadata',
+      'processProjectGraph',
       'shutdown',
+      'preRun',
+      'postRun',
     ].includes(message.type)
   );
 }
@@ -153,6 +208,8 @@ export function isPluginWorkerResult(
       'createDependenciesResult',
       'processProjectGraphResult',
       'createMetadataResult',
+      'preRunResult',
+      'postRunResult',
     ].includes(message.type)
   );
 }

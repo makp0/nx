@@ -43,7 +43,7 @@ const MAX_MESSAGE_WAIT =
 
 interface PendingPromise {
   promise: Promise<unknown>;
-  resolver: (result: any) => void;
+  resolver: (result?: any) => void;
   rejector: (err: any) => void;
 }
 
@@ -217,6 +217,44 @@ function createWorkerHandler(
                   );
                 }
               : undefined,
+            preRun: result.hasPreRun
+              ? (context) => {
+                  const tx = pluginName + worker.pid + ':preRun:' + txId++;
+                  return registerPendingPromise(
+                    tx,
+                    pending,
+                    () => {
+                      sendMessageOverSocket(socket, {
+                        type: 'preRun',
+                        payload: { tx, context },
+                      });
+                    },
+                    {
+                      plugin: pluginName,
+                      operation: 'preRun',
+                    }
+                  );
+                }
+              : undefined,
+            postRun: result.hasPostRun
+              ? (context) => {
+                  const tx = pluginName + worker.pid + ':postRun:' + txId++;
+                  return registerPendingPromise(
+                    tx,
+                    pending,
+                    () => {
+                      sendMessageOverSocket(socket, {
+                        type: 'postRun',
+                        payload: { tx, context },
+                      });
+                    },
+                    {
+                      plugin: pluginName,
+                      operation: 'postRun',
+                    }
+                  );
+                }
+              : undefined,
           });
         } else if (result.success === false) {
           onloadError(result.error);
@@ -242,6 +280,22 @@ function createWorkerHandler(
         const { resolver, rejector } = pending.get(tx);
         if (result.success) {
           resolver(result.metadata);
+        } else if (result.success === false) {
+          rejector(result.error);
+        }
+      },
+      preRunResult: ({ tx, ...result }) => {
+        const { resolver, rejector } = pending.get(tx);
+        if (result.success) {
+          resolver();
+        } else if (result.success === false) {
+          rejector(result.error);
+        }
+      },
+      postRunResult: ({ tx, ...result }) => {
+        const { resolver, rejector } = pending.get(tx);
+        if (result.success) {
+          resolver();
         } else if (result.success === false) {
           rejector(result.error);
         }

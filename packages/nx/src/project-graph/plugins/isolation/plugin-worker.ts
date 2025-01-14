@@ -1,6 +1,7 @@
 import { consumeMessage, isPluginWorkerMessage } from './messaging';
 import { createSerializableError } from '../../../utils/serializable-error';
 import { consumeMessagesFromSocket } from '../../../utils/consume-messages-from-socket';
+import type { LoadedNxPlugin } from '../loaded-nx-plugin';
 
 import { createServer } from 'net';
 import { unlinkSync } from 'fs';
@@ -12,7 +13,7 @@ if (process.env.NX_PERF_LOGGING === 'true') {
 global.NX_GRAPH_CREATION = true;
 global.NX_PLUGIN_WORKER = true;
 let connected = false;
-let plugin;
+let plugin: LoadedNxPlugin;
 
 const socketPath = process.argv[2];
 
@@ -75,6 +76,8 @@ const server = createServer((socket) => {
                   !!plugin.processProjectGraph,
                 hasCreateMetadata:
                   'createMetadata' in plugin && !!plugin.createMetadata,
+                hasPreRun: 'preRun' in plugin && !!plugin.preRun,
+                hasPostRun: 'postRun' in plugin && !!plugin.postRun,
                 success: true,
               },
             };
@@ -134,6 +137,42 @@ const server = createServer((socket) => {
           } catch (e) {
             return {
               type: 'createMetadataResult',
+              payload: {
+                success: false,
+                error: createSerializableError(e),
+                tx,
+              },
+            };
+          }
+        },
+        preRun: async ({ tx, context }) => {
+          try {
+            await plugin.preRun?.(context);
+            return {
+              type: 'preRunResult',
+              payload: { success: true, tx },
+            };
+          } catch (e) {
+            return {
+              type: 'preRunResult',
+              payload: {
+                success: false,
+                error: createSerializableError(e),
+                tx,
+              },
+            };
+          }
+        },
+        postRun: async ({ tx, context }) => {
+          try {
+            await plugin.postRun?.(context);
+            return {
+              type: 'postRunResult',
+              payload: { success: true, tx },
+            };
+          } catch (e) {
+            return {
+              type: 'postRunResult',
               payload: {
                 success: false,
                 error: createSerializableError(e),
