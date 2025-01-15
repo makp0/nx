@@ -80,7 +80,7 @@ jobs:
     executor: linux
     environment:
       NX_E2E_CI_CACHE_KEY: e2e-circleci-linux
-      NX_DAEMON: 'true'
+      NX_DAEMON: 'false'
       NX_PERF_LOGGING: 'false'
       NX_VERBOSE_LOGGING: 'true'
       NX_CLOUD_DEBUG_URLS: 'true'
@@ -104,7 +104,7 @@ jobs:
           os: linux
       - run:
           name: Check Documentation
-          command: NX_NO_CLOUD=true NX_DAEMON=false pnpm nx documentation --no-cloud
+          command: pnpm nx documentation --no-dte
           no_output_timeout: 20m
       - run:
           name: Run Checks/Lint/Test/Build
