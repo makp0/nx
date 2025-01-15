@@ -104,6 +104,9 @@ jobs:
       - run-pnpm-install:
           os: linux
       - run:
+          name: Print Workspace Cache
+          command: ls -lah ./.nx/cache/workspace-data
+      - run:
           name: Project Graph Cold
           command: pnpm nx show projects
       - run:
