@@ -81,7 +81,7 @@ jobs:
     environment:
       NX_E2E_CI_CACHE_KEY: e2e-circleci-linux
       NX_DAEMON: 'false'
-      NX_PERF_LOGGING: 'false'
+      NX_PERF_LOGGING: 'true'
       NX_VERBOSE_LOGGING: 'true'
       NX_CLOUD_DEBUG_URLS: 'true'
       NX_NATIVE_LOGGING: 'false'
