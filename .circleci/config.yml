@@ -104,7 +104,7 @@ jobs:
           os: linux
       - run:
           name: Check Documentation
-          command: pnpm nx documentation --no-cloud
+          command: NX_NO_CLOUD=true NX_DAEMON=false pnpm nx documentation --no-cloud
           no_output_timeout: 20m
       - run:
           name: Run Checks/Lint/Test/Build
