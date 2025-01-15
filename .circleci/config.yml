@@ -84,13 +84,14 @@ jobs:
       NX_PERF_LOGGING: 'true'
       NX_VERBOSE_LOGGING: 'true'
       NX_CLOUD_DEBUG_URLS: 'true'
-      NX_NATIVE_LOGGING: 'false'
+      NX_NATIVE_LOGGING: 'true'
       NX_E2E_RUN_E2E: 'true'
       NX_CI_EXECUTION_ENV: 'linux'
       NX_CLOUD_DTE_V2: 'true'
       NX_CLOUD_DTE_SUMMARY: 'true'
       NX_CLOUD_NO_TIMEOUTS: 'true'
       NX_CLOUD_SKIP_WORKSPACE_DATA_CACHE: 'false'
+      NX_FORCE_REUSE_CACHED_GRAPH: 'true'
     steps:
       - checkout
       - nx/set-shas:
@@ -104,11 +105,17 @@ jobs:
       - run-pnpm-install:
           os: linux
       - run:
+          name: Print env
+          command: echo $NX_CACHE_PROJECT_GRAPH
+      - run:
           name: Print Workspace Cache
-          command: ls -lah .
+          command: ls -lah .nx/workspace-data
       - run:
           name: Project Graph Cold
           command: pnpm nx show projects
+      - run:
+          name: Print Workspace Cache 2
+          command: ls -lah .nx/workspace-data
       - run:
           name: Project Graph Warm
           command: pnpm nx show projects
