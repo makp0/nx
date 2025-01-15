@@ -26,7 +26,7 @@ export function projectHasTargetAndConfiguration(
 
 export function getSourceDirOfDependentProjects(
   projectName: string,
-  projectGraph = readCachedProjectGraph()
+  projectGraph: ProjectGraph = readCachedProjectGraph()
 ): [projectDirs: string[], warnings: string[]] {
   if (!projectGraph.nodes[projectName]) {
     throw new Error(

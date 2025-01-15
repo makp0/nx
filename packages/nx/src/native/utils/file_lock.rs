@@ -1,10 +1,12 @@
-use fs4::fs_std::FileExt;
 use napi::bindgen_prelude::*;
 use std::{
     fs::{self, OpenOptions},
     path::Path,
 };
 use tracing::trace;
+
+#[cfg(not(target_arch = "wasm32"))]
+use fs4::fs_std::FileExt;
 
 #[napi]
 pub struct FileLock {
@@ -26,6 +28,7 @@ pub struct FileLock {
 /// }
 
 #[napi]
+#[cfg(not(target_arch = "wasm32"))]
 impl FileLock {
     #[napi(constructor)]
     pub fn new(lock_file_path: String) -> anyhow::Result<Self> {
@@ -101,6 +104,15 @@ impl FileLock {
         self.file.lock_exclusive()?;
         self.locked = true;
         Ok(())
+    }
+}
+
+#[napi]
+#[cfg(target_arch = "wasm32")]
+impl FileLock {
+    #[napi(constructor)]
+    pub fn new(lock_file_path: String) -> anyhow::Result<Self> {
+        anyhow::bail!("FileLock is not supported on WASM")
     }
 }
 

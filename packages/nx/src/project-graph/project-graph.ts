@@ -36,7 +36,7 @@ import {
 } from './utils/retrieve-workspace-files';
 import { getPlugins } from './plugins/get-plugins';
 import { logger } from '../utils/logger';
-import { FileLock } from '../native';
+import { FileLock, IS_WASM } from '../native';
 import { join } from 'path';
 import { workspaceDataDirectory } from '../utils/cache-directory';
 import { DelayedSpinner } from '../utils/delayed-spinner';
@@ -282,13 +282,11 @@ export async function createProjectGraphAndSourceMapsAsync(
   performance.mark('create-project-graph-async:start');
 
   if (!daemonClient.enabled()) {
-    const lock = new FileLock(
-      join(workspaceDataDirectory, 'project-graph.lock')
-    );
-    const initiallyLocked = lock.locked;
-    let locked = lock.locked;
-
-    while (lock.locked) {
+    const lock = !IS_WASM
+      ? new FileLock(join(workspaceDataDirectory, 'project-graph.lock'))
+      : null;
+    let locked = lock?.locked;
+    while (locked) {
       logger.verbose(
         'Waiting for graph construction in another process to complete'
       );
@@ -324,9 +322,7 @@ export async function createProjectGraphAndSourceMapsAsync(
       }
       locked = lock.check();
     }
-    // if (!initiallyLocked) {
-    lock.lock();
-    // }
+    lock?.lock();
     try {
       const res = await buildProjectGraphAndSourceMapsWithoutDaemon();
       performance.measure(
