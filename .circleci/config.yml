@@ -90,6 +90,7 @@ jobs:
       NX_CLOUD_DTE_V2: 'true'
       NX_CLOUD_DTE_SUMMARY: 'true'
       NX_CLOUD_NO_TIMEOUTS: 'true'
+      NX_CLOUD_SKIP_WORKSPACE_DATA_CACHE: 'true'
     steps:
       - checkout
       - nx/set-shas:
