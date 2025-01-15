@@ -19,6 +19,7 @@ import {
 import { PackageJson } from '../utils/package-json';
 import { nxVersion } from '../utils/versions';
 import { ConfigurationSourceMaps } from './utils/project-configuration-utils';
+import { ProjectGraphError, ProjectGraphErrorTypes } from './error-types';
 
 export interface FileMapCache {
   version: string;
@@ -80,7 +81,9 @@ export function readFileMapCache(): null | FileMapCache {
   return data ?? null;
 }
 
-export function readProjectGraphCache(): null | ProjectGraph {
+export function readProjectGraphCache():
+  | null
+  | (ProjectGraph & { errors: ProjectGraphErrorTypes[]; computedAt: number }) {
   performance.mark('read project-graph:start');
   ensureCacheDirectory();
 
@@ -152,7 +155,8 @@ export function createProjectFileMapCache(
 export function writeCache(
   cache: FileMapCache,
   projectGraph: ProjectGraph,
-  sourceMaps: ConfigurationSourceMaps
+  sourceMaps: ConfigurationSourceMaps,
+  errors: ProjectGraphErrorTypes[]
 ): void {
   performance.mark('write cache:start');
   let retry = 1;
@@ -169,7 +173,11 @@ export function writeCache(
     const tmpSourceMapPath = `${nxSourceMaps}~${unique}`;
 
     try {
-      writeJsonFile(tmpProjectGraphPath, projectGraph);
+      writeJsonFile(tmpProjectGraphPath, {
+        ...projectGraph,
+        errors,
+        computedAt: Date.now(),
+      });
       renameSync(tmpProjectGraphPath, nxProjectGraph);
 
       writeJsonFile(tmpFileMapPath, cache);

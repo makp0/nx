@@ -6,20 +6,21 @@ import { ProjectConfiguration } from '../config/workspace-json-project-json';
 import { ProjectGraph } from '../config/project-graph';
 import { CreateNodesFunctionV2 } from './plugins/public-api';
 
+export type ProjectGraphErrorTypes =
+  | AggregateCreateNodesError
+  | MergeNodesError
+  | CreateMetadataError
+  | ProjectsWithNoNameError
+  | MultipleProjectsWithSameNameError
+  | ProcessDependenciesError
+  | WorkspaceValidityError;
+
 export class ProjectGraphError extends Error {
   readonly #partialProjectGraph: ProjectGraph;
   readonly #partialSourceMaps: ConfigurationSourceMaps;
 
   constructor(
-    private readonly errors: Array<
-      | AggregateCreateNodesError
-      | MergeNodesError
-      | ProjectsWithNoNameError
-      | MultipleProjectsWithSameNameError
-      | ProcessDependenciesError
-      | CreateMetadataError
-      | WorkspaceValidityError
-    >,
+    private readonly errors: Array<ProjectGraphErrorTypes>,
     partialProjectGraph: ProjectGraph,
     partialSourceMaps: ConfigurationSourceMaps
   ) {

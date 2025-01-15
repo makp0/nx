@@ -58,7 +58,7 @@ export function getSourceDirOfDependentProjects(
  */
 export function findAllProjectNodeDependencies(
   parentNodeName: string,
-  projectGraph = readCachedProjectGraph(),
+  projectGraph: ProjectGraph = readCachedProjectGraph(),
   includeExternalDependencies = false
 ): string[] {
   const dependencyNodeNames = new Set<string>();

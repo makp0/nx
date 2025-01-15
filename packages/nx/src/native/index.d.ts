@@ -17,6 +17,7 @@ export declare class FileLock {
   locked: boolean
   constructor(lockFilePath: string)
   unlock(): void
+  check(): boolean
   wait(): Promise<void>
   lock(): void
 }

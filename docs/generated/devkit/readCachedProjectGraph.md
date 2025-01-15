@@ -1,12 +1,12 @@
 # Function: readCachedProjectGraph
 
-▸ **readCachedProjectGraph**(): [`ProjectGraph`](../../devkit/documents/ProjectGraph)
+▸ **readCachedProjectGraph**(): [`ProjectGraph`](../../devkit/documents/ProjectGraph) & \{ `computedAt`: `number` ; `errors`: `ProjectGraphErrorTypes`[] }
 
 Synchronously reads the latest cached copy of the workspace's ProjectGraph.
 
 #### Returns
 
-[`ProjectGraph`](../../devkit/documents/ProjectGraph)
+[`ProjectGraph`](../../devkit/documents/ProjectGraph) & \{ `computedAt`: `number` ; `errors`: `ProjectGraphErrorTypes`[] }
 
 **`Throws`**
 

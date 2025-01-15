@@ -62,6 +62,20 @@ impl FileLock {
         self.locked = false;
     }
 
+    #[napi]
+    pub fn check(&mut self) -> Result<bool> {
+        // Check if the file is locked
+        let file_lock: std::result::Result<(), std::io::Error> = self.file.try_lock_exclusive();
+
+        if file_lock.is_ok() {
+            // Checking if the file is locked, locks it, so unlock it.
+            self.file.unlock()?;
+        }
+
+        self.locked = file_lock.is_err();
+        Ok(self.locked)
+    }
+
     #[napi(ts_return_type = "Promise<void>")]
     pub fn wait(&mut self, env: Env) -> napi::Result<napi::JsObject> {
         if self.locked {
@@ -74,6 +88,7 @@ impl FileLock {
                     .create(true)
                     .open(&lock_file_path)?;
                 file.lock_shared()?;
+                file.unlock()?;
                 Ok(())
             })
         } else {

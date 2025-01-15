@@ -21,6 +21,7 @@ import {
   isAggregateProjectGraphError,
   ProjectConfigurationsError,
   ProjectGraphError,
+  ProjectGraphErrorTypes,
 } from './error-types';
 import {
   readFileMapCache,
@@ -44,8 +45,11 @@ import { DelayedSpinner } from '../utils/delayed-spinner';
  * Synchronously reads the latest cached copy of the workspace's ProjectGraph.
  * @throws {Error} if there is no cached ProjectGraph to read from
  */
-export function readCachedProjectGraph(): ProjectGraph {
-  const projectGraphCache: ProjectGraph = readProjectGraphCache();
+export function readCachedProjectGraph(): ProjectGraph & {
+  errors: ProjectGraphErrorTypes[];
+  computedAt: number;
+} {
+  const projectGraphCache = readProjectGraphCache();
   if (!projectGraphCache) {
     const angularSpecificError = fileExists(`${workspaceRoot}/angular.json`)
       ? stripIndents`
@@ -168,12 +172,13 @@ export async function buildProjectGraphAndSourceMapsWithoutDaemon() {
     ...(projectGraphError?.errors ?? []),
   ];
 
+  if (cacheEnabled) {
+    writeCache(projectFileMapCache, projectGraph, sourceMaps, errors);
+  }
+
   if (errors.length > 0) {
     throw new ProjectGraphError(errors, projectGraph, sourceMaps);
   } else {
-    if (cacheEnabled) {
-      writeCache(projectFileMapCache, projectGraph, sourceMaps);
-    }
     return { projectGraph, sourceMaps };
   }
 }
@@ -252,7 +257,11 @@ export async function createProjectGraphAsync(
   if (process.env.NX_FORCE_REUSE_CACHED_GRAPH === 'true') {
     try {
       // If no cached graph is found, we will fall through to the normal flow
-      return readCachedGraphAndHydrateFileMap();
+      const graph = await readCachedGraphAndHydrateFileMap();
+      if (graph.errors.length > 0) {
+        throw new ProjectGraphError(graph.errors, graph, readSourceMapsCache());
+      }
+      return graph;
     } catch (e) {
       logger.verbose('Unable to use cached project graph', e);
     }
@@ -276,8 +285,10 @@ export async function createProjectGraphAndSourceMapsAsync(
     const lock = new FileLock(
       join(workspaceDataDirectory, 'project-graph.lock')
     );
+    const initiallyLocked = lock.locked;
+    let locked = lock.locked;
 
-    if (lock.locked) {
+    while (lock.locked) {
       logger.verbose(
         'Waiting for graph construction in another process to complete'
       );
@@ -300,12 +311,22 @@ export async function createProjectGraphAndSourceMapsAsync(
           'The project graph was computed in another process, but the source maps are missing.'
         );
       }
-      return {
-        projectGraph: await readCachedGraphAndHydrateFileMap(),
-        sourceMaps,
-      };
+      const graph = await readCachedGraphAndHydrateFileMap();
+      if (graph.errors.length > 0) {
+        throw new ProjectGraphError(graph.errors, graph, sourceMaps);
+      }
+      if (Date.now() - graph.computedAt < 10_000) {
+        // If the graph was computed in the last 10 seconds, we can assume it's fresh
+        return {
+          projectGraph: graph,
+          sourceMaps,
+        };
+      }
+      locked = lock.check();
     }
+    // if (!initiallyLocked) {
     lock.lock();
+    // }
     try {
       const res = await buildProjectGraphAndSourceMapsWithoutDaemon();
       performance.measure(
