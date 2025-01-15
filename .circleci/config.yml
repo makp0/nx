@@ -104,6 +104,12 @@ jobs:
       - run-pnpm-install:
           os: linux
       - run:
+          name: Project Graph Cold
+          command: pnpm nx show projects
+      - run:
+          name: Project Graph Warm
+          command: pnpm nx show projects
+      - run:
           name: Check Documentation
           command: pnpm nx documentation --no-dte
           no_output_timeout: 20m
