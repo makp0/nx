@@ -16,7 +16,7 @@ import type {
   ProjectsMetadata,
 } from './public-api';
 import { createNodesFromFiles } from './utils';
-import type { TaskResults } from '../../tasks-runner/life-cycle';
+import { isIsolationEnabled } from './isolation/enabled';
 
 export class LoadedNxPlugin {
   readonly name: string;
@@ -38,7 +38,7 @@ export class LoadedNxPlugin {
     graph: ProjectGraph,
     context: CreateMetadataContext
   ) => Promise<ProjectsMetadata>;
-  readonly preRun?: (context: PreRunContext) => Promise<void>;
+  readonly preRun?: (context: PreRunContext) => Promise<NodeJS.ProcessEnv>;
   readonly postRun?: (context: PostRunContext) => Promise<void>;
 
   readonly options?: unknown;
@@ -114,18 +114,40 @@ export class LoadedNxPlugin {
     }
 
     if (plugin.preRun) {
-      this.preRun = async (context: PreRunContext) =>
+      this.preRun = async (context: PreRunContext) => {
+        const updates = {};
+        const originalEnv = process.env;
+        let revokeFn: () => void;
+        if (isIsolationEnabled()) {
+          const { proxy, revoke } = Proxy.revocable<NodeJS.ProcessEnv>(
+            process.env,
+            {
+              set: (target, key: string, value) => {
+                target[key] = value;
+                updates[key] = value;
+                return true;
+              },
+            }
+          );
+          process.env = proxy;
+          revokeFn = revoke;
+        }
         plugin.preRun(this.options, context);
-    }
 
-    if (plugin.postRun) {
-      this.postRun = async (context: PostRunContext) =>
-        plugin.postRun(this.options, context);
+        if (revokeFn) {
+          revokeFn();
+        }
+        process.env = originalEnv;
+        for (const key in updates) {
+          process.env[key] = updates[key];
+        }
+        return updates;
+      };
+
+      if (plugin.postRun) {
+        this.postRun = async (context: PostRunContext) =>
+          plugin.postRun(this.options, context);
+      }
     }
   }
 }
-
-export type CreateNodesResultWithContext = CreateNodesResult & {
-  file: string;
-  pluginName: string;
-};

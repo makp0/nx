@@ -287,7 +287,7 @@ function createWorkerHandler(
       preRunResult: ({ tx, ...result }) => {
         const { resolver, rejector } = pending.get(tx);
         if (result.success) {
-          resolver();
+          resolver(result.mutations);
         } else if (result.success === false) {
           rejector(result.error);
         }

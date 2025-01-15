@@ -1,18 +1,19 @@
 import type { PostRunContext, PreRunContext } from './public-api';
 import type { LoadedNxPlugin } from './loaded-nx-plugin';
+import { isIsolationEnabled } from './isolation/enabled';
 
 export async function runPreRun(
   plugins: LoadedNxPlugin[],
   pluginContext: PreRunContext
 ) {
   performance.mark(`preRun:start`);
-  await Promise.all(
+  const envs = await Promise.all(
     plugins
       .filter((p) => p.preRun)
       .map(async (plugin) => {
         performance.mark(`${plugin.name}:preRun:start`);
         try {
-          await plugin.preRun(pluginContext);
+          return await plugin.preRun(pluginContext);
         } finally {
           performance.mark(`${plugin.name}:preRun:end`);
           performance.measure(
@@ -23,6 +24,13 @@ export async function runPreRun(
         }
       })
   );
+  if (isIsolationEnabled()) {
+    for (const env of envs) {
+      for (const key in env) {
+        process.env[key] = env[key];
+      }
+    }
+  }
   performance.mark(`preRun:end`);
   performance.measure(`preRun`, `preRun:start`, `preRun:end`);
 }

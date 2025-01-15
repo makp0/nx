@@ -129,6 +129,7 @@ export interface PluginWorkerPreRunMessageResult {
     | {
         tx: string;
         success: true;
+        mutations: NodeJS.ProcessEnv;
       }
     | {
         success: false;

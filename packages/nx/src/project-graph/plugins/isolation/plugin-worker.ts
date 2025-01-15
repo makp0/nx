@@ -147,10 +147,10 @@ const server = createServer((socket) => {
         },
         preRun: async ({ tx, context }) => {
           try {
-            await plugin.preRun?.(context);
+            const mutations = await plugin.preRun?.(context);
             return {
               type: 'preRunResult',
-              payload: { success: true, tx },
+              payload: { success: true, tx, mutations },
             };
           } catch (e) {
             return {
