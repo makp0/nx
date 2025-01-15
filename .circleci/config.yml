@@ -105,7 +105,7 @@ jobs:
           os: linux
       - run:
           name: Print Workspace Cache
-          command: ls -lah ./.nx/cache/workspace-data
+          command: ls -lah .
       - run:
           name: Project Graph Cold
           command: pnpm nx show projects
