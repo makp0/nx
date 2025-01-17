@@ -22,7 +22,7 @@ export class ProjectGraphError extends Error {
   constructor(
     private readonly errors: Array<ProjectGraphErrorTypes>,
     partialProjectGraph: ProjectGraph,
-    partialSourceMaps: ConfigurationSourceMaps
+    partialSourceMaps: ConfigurationSourceMaps | null
   ) {
     const messageFragments = ['Failed to process project graph.'];
     const mergeNodesErrors = [];

@@ -1,7 +1,7 @@
 import { fork } from 'child_process';
 import { join } from 'path';
 
-describe('withLock', () => {
+describe('file-lock', () => {
   it('should block the second call until the first one is done', async () => {
     let combinedOutputs = [];
     let a = fork(join(__dirname, './__fixtures__/file-lock.fixture.js'), {

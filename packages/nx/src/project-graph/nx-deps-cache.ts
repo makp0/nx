@@ -83,14 +83,17 @@ export function readFileMapCache(): null | FileMapCache {
 
 export function readProjectGraphCache():
   | null
-  | (ProjectGraph & { errors: ProjectGraphErrorTypes[]; computedAt: number }) {
+  | (ProjectGraph & { computedAt?: number }) {
   performance.mark('read project-graph:start');
   ensureCacheDirectory();
 
-  let data = null;
+  let projectGraphCache: ProjectGraph & {
+    errors?: Error[];
+    computedAt?: number;
+  } = null;
   try {
     if (fileExists(nxProjectGraph)) {
-      data = readJsonFile(nxProjectGraph);
+      projectGraphCache = readJsonFile(nxProjectGraph);
     }
   } catch (error) {
     console.log(
@@ -105,7 +108,16 @@ export function readProjectGraphCache():
     'read project-graph:start',
     'read project-graph:end'
   );
-  return data ?? null;
+
+  if (projectGraphCache?.errors.length > 0) {
+    throw new ProjectGraphError(
+      projectGraphCache.errors,
+      projectGraphCache,
+      readSourceMapsCache()
+    );
+  }
+
+  return projectGraphCache ?? null;
 }
 
 export function readSourceMapsCache(): null | ConfigurationSourceMaps {

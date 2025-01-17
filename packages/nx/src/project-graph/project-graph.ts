@@ -46,8 +46,7 @@ import { DelayedSpinner } from '../utils/delayed-spinner';
  * @throws {Error} if there is no cached ProjectGraph to read from
  */
 export function readCachedProjectGraph(): ProjectGraph & {
-  errors: ProjectGraphErrorTypes[];
-  computedAt: number;
+  computedAt?: number;
 } {
   const projectGraphCache = readProjectGraphCache();
   if (!projectGraphCache) {
@@ -258,11 +257,11 @@ export async function createProjectGraphAsync(
     try {
       // If no cached graph is found, we will fall through to the normal flow
       const graph = await readCachedGraphAndHydrateFileMap();
-      if (graph.errors.length > 0) {
-        throw new ProjectGraphError(graph.errors, graph, readSourceMapsCache());
-      }
       return graph;
     } catch (e) {
+      if (e instanceof ProjectGraphError) {
+        throw e;
+      }
       logger.verbose('Unable to use cached project graph', e);
     }
   }
@@ -293,6 +292,7 @@ export async function createProjectGraphAndSourceMapsAsync(
       const spinner = new DelayedSpinner(
         'Waiting for graph construction in another process to complete'
       );
+      const start = Date.now();
       await lock.wait();
       spinner.cleanup();
 
@@ -303,18 +303,16 @@ export async function createProjectGraphAndSourceMapsAsync(
       // - All of the waiting processes to build the graph
       // - Even one of the processes building the graph on a legitimate error
 
-      const sourceMaps = readSourceMapsCache();
-      if (!sourceMaps) {
-        throw new Error(
-          'The project graph was computed in another process, but the source maps are missing.'
-        );
-      }
       const graph = await readCachedGraphAndHydrateFileMap();
-      if (graph.errors.length > 0) {
-        throw new ProjectGraphError(graph.errors, graph, sourceMaps);
-      }
-      if (Date.now() - graph.computedAt < 10_000) {
-        // If the graph was computed in the last 10 seconds, we can assume it's fresh
+      // The graph is fresh because it was computed after we started waiting
+      if (graph.computedAt > start) {
+        const sourceMaps = readSourceMapsCache();
+        if (!sourceMaps) {
+          throw new Error(
+            'The project graph was computed in another process, but the source maps are missing.'
+          );
+        }
+
         return {
           projectGraph: graph,
           sourceMaps,
