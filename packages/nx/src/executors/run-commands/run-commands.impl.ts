@@ -643,7 +643,11 @@ function registerProcessListener() {
   registerCleanupFn((signal) => {
     childProcesses.forEach((p) => {
       if ('connected' in p ? p.connected : p.isAlive) {
-        p.kill(signal);
+        if (signal) {
+          p.kill(signal);
+        } else {
+          p.kill();
+        }
       }
     });
   });

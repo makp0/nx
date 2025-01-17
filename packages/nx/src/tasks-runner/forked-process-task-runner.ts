@@ -502,7 +502,11 @@ export class ForkedProcessTaskRunner {
     registerCleanupFn((signal) => {
       this.processes.forEach((p) => {
         if ('connected' in p ? p.connected : p.isAlive) {
-          p.kill(signal);
+          if (signal) {
+            p.kill(signal);
+          } else {
+            p.kill();
+          }
         }
       });
     });

@@ -1,12 +1,18 @@
 # Function: readCachedProjectGraph
 
-▸ **readCachedProjectGraph**(): [`ProjectGraph`](../../devkit/documents/ProjectGraph) & \{ `computedAt`: `number` ; `errors`: `ProjectGraphErrorTypes`[] }
+▸ **readCachedProjectGraph**(`minimumComputedAt?`): [`ProjectGraph`](../../devkit/documents/ProjectGraph)
 
 Synchronously reads the latest cached copy of the workspace's ProjectGraph.
 
+#### Parameters
+
+| Name                 | Type     | Description                                                                    |
+| :------------------- | :------- | :----------------------------------------------------------------------------- |
+| `minimumComputedAt?` | `number` | The minimum timestamp that the cached ProjectGraph must have been computed at. |
+
 #### Returns
 
-[`ProjectGraph`](../../devkit/documents/ProjectGraph) & \{ `computedAt`: `number` ; `errors`: `ProjectGraphErrorTypes`[] }
+[`ProjectGraph`](../../devkit/documents/ProjectGraph)
 
 **`Throws`**
 
