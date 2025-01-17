@@ -91,7 +91,7 @@ jobs:
       NX_CLOUD_DTE_SUMMARY: 'true'
       NX_CLOUD_NO_TIMEOUTS: 'true'
       NX_CLOUD_SKIP_WORKSPACE_DATA_CACHE: 'false'
-      NX_FORCE_REUSE_CACHED_GRAPH: 'true'
+      NX_FORCE_REUSE_CACHED_GRAPH: 'false'
     steps:
       - checkout
       - nx/set-shas:
