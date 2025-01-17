@@ -1,4 +1,4 @@
-import { IS_WASM } from 'nx/src/native';
+import { IS_WASM } from '../../../native';
 
 export function isIsolationEnabled() {
   // Explicitly enabled, regardless of further conditions

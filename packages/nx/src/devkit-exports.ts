@@ -57,10 +57,10 @@ export type {
   CreateMetadata,
   CreateMetadataContext,
   ProjectsMetadata,
-  PreRun,
-  PreRunContext,
-  PostRun,
-  PostRunContext,
+  PreTasksExecution,
+  PreTasksExecutionContext,
+  PostTasksExecution,
+  PostTasksExecutionContext,
 } from './project-graph/plugins';
 
 export { AggregateCreateNodesError } from './project-graph/error-types';

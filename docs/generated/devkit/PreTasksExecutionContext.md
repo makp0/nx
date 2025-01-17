@@ -1,6 +1,6 @@
-# Type alias: PreRunContext
+# Type alias: PreTasksExecutionContext
 
-Ƭ **PreRunContext**: `Object`
+Ƭ **PreTasksExecutionContext**: `Object`
 
 #### Type declaration
 

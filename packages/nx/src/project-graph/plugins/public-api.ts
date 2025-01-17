@@ -181,31 +181,31 @@ export type NxPluginV2<TOptions = unknown> = {
   /**
    * Provides a function to run before the Nx runs tasks
    */
-  preRun?: PreRun<TOptions>;
+  preTasksExecution?: PreTasksExecution<TOptions>;
 
   /**
    * Provides a function to run after the Nx runs tasks
    */
-  postRun?: PostRun<TOptions>;
+  postTasksExecution?: PostTasksExecution<TOptions>;
 };
 
-export type PreRunContext = {
+export type PreTasksExecutionContext = {
   readonly workspaceRoot: string;
   readonly nxJsonConfiguration: NxJsonConfiguration;
 };
-export type PostRunContext = {
+export type PostTasksExecutionContext = {
   readonly workspaceRoot: string;
   readonly nxJsonConfiguration: NxJsonConfiguration;
   readonly taskResults: TaskResults;
 };
 
-export type PreRun<TOptions = unknown> = (
+export type PreTasksExecution<TOptions = unknown> = (
   options: TOptions | undefined,
-  context: PreRunContext
+  context: PreTasksExecutionContext
 ) => void | Promise<void>;
-export type PostRun<TOptions = unknown> = (
+export type PostTasksExecution<TOptions = unknown> = (
   options: TOptions | undefined,
-  context: PostRunContext
+  context: PostTasksExecutionContext
 ) => void | Promise<void>;
 /**
  * A plugin which enhances the behavior of Nx

@@ -60,8 +60,10 @@ import { shouldStreamOutput } from './utils';
 import chalk = require('chalk');
 import type { Observable } from 'rxjs';
 import { printPowerpackLicense } from '../utils/powerpack';
-import { getPlugins } from '../project-graph/plugins/get-plugins';
-import { runPostRun, runPreRun } from '../project-graph/plugins/run-hooks';
+import {
+  runPostTasksExecution,
+  runPreTasksExecution,
+} from '../project-graph/plugins/tasks-execution-hooks';
 
 async function getTerminalOutputLifeCycle(
   initiatingProject: string,
@@ -184,9 +186,7 @@ export async function runCommand(
   const status = await handleErrors(
     process.env.NX_VERBOSE_LOGGING === 'true',
     async () => {
-      const plugins = await getPlugins();
-
-      await runPreRun(plugins, {
+      await runPreTasksExecution({
         workspaceRoot,
         nxJsonConfiguration: nxJson,
       });
@@ -214,7 +214,7 @@ export async function runCommand(
         ? 1
         : 0;
 
-      await runPostRun(plugins, {
+      await runPostTasksExecution({
         taskResults,
         workspaceRoot,
         nxJsonConfiguration: nxJson,

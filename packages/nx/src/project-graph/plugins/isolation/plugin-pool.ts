@@ -217,7 +217,7 @@ function createWorkerHandler(
                   );
                 }
               : undefined,
-            preRun: result.hasPreRun
+            preTasksExecution: result.hasPreTasksExecution
               ? (context) => {
                   const tx = pluginName + worker.pid + ':preRun:' + txId++;
                   return registerPendingPromise(
@@ -225,18 +225,18 @@ function createWorkerHandler(
                     pending,
                     () => {
                       sendMessageOverSocket(socket, {
-                        type: 'preRun',
+                        type: 'preTasksExecution',
                         payload: { tx, context },
                       });
                     },
                     {
                       plugin: pluginName,
-                      operation: 'preRun',
+                      operation: 'preTasksExecution',
                     }
                   );
                 }
               : undefined,
-            postRun: result.hasPostRun
+            postTasksExecution: result.hasPostTasksExecution
               ? (context) => {
                   const tx = pluginName + worker.pid + ':postRun:' + txId++;
                   return registerPendingPromise(
@@ -244,13 +244,13 @@ function createWorkerHandler(
                     pending,
                     () => {
                       sendMessageOverSocket(socket, {
-                        type: 'postRun',
+                        type: 'postTasksExecution',
                         payload: { tx, context },
                       });
                     },
                     {
                       plugin: pluginName,
-                      operation: 'postRun',
+                      operation: 'postTasksExecution',
                     }
                   );
                 }
@@ -284,7 +284,7 @@ function createWorkerHandler(
           rejector(result.error);
         }
       },
-      preRunResult: ({ tx, ...result }) => {
+      preTasksExecutionResult: ({ tx, ...result }) => {
         const { resolver, rejector } = pending.get(tx);
         if (result.success) {
           resolver(result.mutations);
@@ -292,7 +292,7 @@ function createWorkerHandler(
           rejector(result.error);
         }
       },
-      postRunResult: ({ tx, ...result }) => {
+      postTasksExecutionResult: ({ tx, ...result }) => {
         const { resolver, rejector } = pending.get(tx);
         if (result.success) {
           resolver();

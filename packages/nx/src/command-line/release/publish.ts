@@ -26,9 +26,11 @@ import {
 import { deepMergeJson } from './config/deep-merge-json';
 import { filterReleaseGroups } from './config/filter-release-groups';
 import { printConfigAndExit } from './utils/print-config';
-import { getPlugins } from '../../project-graph/plugins/get-plugins';
 import { workspaceRoot } from '../../utils/workspace-root';
-import { runPostRun, runPreRun } from '../../project-graph/plugins/run-hooks';
+import {
+  runPostTasksExecution,
+  runPreTasksExecution,
+} from '../../project-graph/plugins/tasks-execution-hooks';
 
 export interface PublishProjectsResult {
   [projectName: string]: {
@@ -252,9 +254,7 @@ async function runPublishOnProjects(
       ].join('\n')}\n`
     );
   }
-  const plugins = await getPlugins();
-
-  await runPreRun(plugins, {
+  await runPreTasksExecution({
     workspaceRoot,
     nxJsonConfiguration: nxJson,
   });
@@ -285,7 +285,7 @@ async function runPublishOnProjects(
       code: taskData.code,
     };
   }
-  await runPostRun(plugins, {
+  await runPostTasksExecution({
     taskResults: commandResults,
     workspaceRoot,
     nxJsonConfiguration: nxJson,

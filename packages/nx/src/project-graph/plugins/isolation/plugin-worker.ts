@@ -76,8 +76,10 @@ const server = createServer((socket) => {
                   !!plugin.processProjectGraph,
                 hasCreateMetadata:
                   'createMetadata' in plugin && !!plugin.createMetadata,
-                hasPreRun: 'preRun' in plugin && !!plugin.preRun,
-                hasPostRun: 'postRun' in plugin && !!plugin.postRun,
+                hasPreTasksExecution:
+                  'preTasksExecution' in plugin && !!plugin.preTasksExecution,
+                hasPostTasksExecution:
+                  'postTasksExecution' in plugin && !!plugin.postTasksExecution,
                 success: true,
               },
             };
@@ -145,16 +147,16 @@ const server = createServer((socket) => {
             };
           }
         },
-        preRun: async ({ tx, context }) => {
+        preTasksExecution: async ({ tx, context }) => {
           try {
-            const mutations = await plugin.preRun?.(context);
+            const mutations = await plugin.preTasksExecution?.(context);
             return {
-              type: 'preRunResult',
+              type: 'preTasksExecutionResult',
               payload: { success: true, tx, mutations },
             };
           } catch (e) {
             return {
-              type: 'preRunResult',
+              type: 'preTasksExecutionResult',
               payload: {
                 success: false,
                 error: createSerializableError(e),
@@ -163,16 +165,16 @@ const server = createServer((socket) => {
             };
           }
         },
-        postRun: async ({ tx, context }) => {
+        postTasksExecution: async ({ tx, context }) => {
           try {
-            await plugin.postRun?.(context);
+            await plugin.postTasksExecution?.(context);
             return {
-              type: 'postRunResult',
+              type: 'postTasksExecutionResult',
               payload: { success: true, tx },
             };
           } catch (e) {
             return {
-              type: 'postRunResult',
+              type: 'postTasksExecutionResult',
               payload: {
                 success: false,
                 error: createSerializableError(e),

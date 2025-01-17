@@ -11,12 +11,13 @@ import type {
   CreateNodesContextV2,
   CreateNodesResult,
   NxPluginV2,
-  PostRunContext,
-  PreRunContext,
+  PostTasksExecutionContext,
+  PreTasksExecutionContext,
   ProjectsMetadata,
 } from './public-api';
 import { createNodesFromFiles } from './utils';
 import { isIsolationEnabled } from './isolation/enabled';
+import { isDaemonEnabled } from '../../daemon/client/client';
 
 export class LoadedNxPlugin {
   readonly name: string;
@@ -38,8 +39,12 @@ export class LoadedNxPlugin {
     graph: ProjectGraph,
     context: CreateMetadataContext
   ) => Promise<ProjectsMetadata>;
-  readonly preRun?: (context: PreRunContext) => Promise<NodeJS.ProcessEnv>;
-  readonly postRun?: (context: PostRunContext) => Promise<void>;
+  readonly preTasksExecution?: (
+    context: PreTasksExecutionContext
+  ) => Promise<NodeJS.ProcessEnv>;
+  readonly postTasksExecution?: (
+    context: PostTasksExecutionContext
+  ) => Promise<void>;
 
   readonly options?: unknown;
   readonly include?: string[];
@@ -113,12 +118,12 @@ export class LoadedNxPlugin {
         plugin.createMetadata(graph, this.options, context);
     }
 
-    if (plugin.preRun) {
-      this.preRun = async (context: PreRunContext) => {
+    if (plugin.preTasksExecution) {
+      this.preTasksExecution = async (context: PreTasksExecutionContext) => {
         const updates = {};
         const originalEnv = process.env;
         let revokeFn: () => void;
-        if (isIsolationEnabled()) {
+        if (isIsolationEnabled() || isDaemonEnabled()) {
           const { proxy, revoke } = Proxy.revocable<NodeJS.ProcessEnv>(
             process.env,
             {
@@ -132,7 +137,7 @@ export class LoadedNxPlugin {
           process.env = proxy;
           revokeFn = revoke;
         }
-        plugin.preRun(this.options, context);
+        plugin.preTasksExecution(this.options, context);
 
         if (revokeFn) {
           revokeFn();
@@ -144,9 +149,9 @@ export class LoadedNxPlugin {
         return updates;
       };
 
-      if (plugin.postRun) {
-        this.postRun = async (context: PostRunContext) =>
-          plugin.postRun(this.options, context);
+      if (plugin.postTasksExecution) {
+        this.postTasksExecution = async (context: PostTasksExecutionContext) =>
+          plugin.postTasksExecution(this.options, context);
       }
     }
   }

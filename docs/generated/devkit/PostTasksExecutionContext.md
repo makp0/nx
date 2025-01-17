@@ -1,6 +1,6 @@
-# Type alias: PostRunContext
+# Type alias: PostTasksExecutionContext
 
-Ƭ **PostRunContext**: `Object`
+Ƭ **PostTasksExecutionContext**: `Object`
 
 #### Type declaration
 
