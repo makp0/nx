@@ -19,7 +19,11 @@ import {
 import { PackageJson } from '../utils/package-json';
 import { nxVersion } from '../utils/versions';
 import { ConfigurationSourceMaps } from './utils/project-configuration-utils';
-import { ProjectGraphError, ProjectGraphErrorTypes } from './error-types';
+import {
+  ProjectGraphError,
+  ProjectGraphErrorTypes,
+  StaleProjectGraphCacheError,
+} from './error-types';
 
 export interface FileMapCache {
   version: string;
@@ -81,43 +85,70 @@ export function readFileMapCache(): null | FileMapCache {
   return data ?? null;
 }
 
-export function readProjectGraphCache():
-  | null
-  | (ProjectGraph & { computedAt?: number }) {
+export function readProjectGraphCache(
+  minimumComputedAt?: number
+): null | ProjectGraph {
   performance.mark('read project-graph:start');
   ensureCacheDirectory();
 
-  let projectGraphCache: ProjectGraph & {
-    errors?: Error[];
-    computedAt?: number;
-  } = null;
   try {
     if (fileExists(nxProjectGraph)) {
-      projectGraphCache = readJsonFile(nxProjectGraph);
+      const {
+        computedAt,
+        errors,
+        ...projectGraphCache
+      }: ProjectGraph & {
+        errors?: Error[];
+        computedAt?: number;
+      } = readJsonFile(nxProjectGraph);
+
+      if (
+        minimumComputedAt &&
+        (!computedAt || computedAt < minimumComputedAt)
+      ) {
+        throw new StaleProjectGraphCacheError();
+      }
+
+      if (errors && errors.length > 0) {
+        if (!minimumComputedAt) {
+          // If you didn't pass minimum computed at, we do not know if
+          // the errors on the cached graph would be relevant to what you
+          // are running. Prior to adding error handling here, the graph
+          // would not have been written to the cache. As such, this matches
+          // existing behavior of the public API.
+          return null;
+        }
+        throw new ProjectGraphError(
+          errors,
+          projectGraphCache,
+          readSourceMapsCache()
+        );
+      }
+
+      return projectGraphCache;
+    } else {
+      return null;
     }
   } catch (error) {
+    if (
+      error instanceof StaleProjectGraphCacheError ||
+      error instanceof ProjectGraphError
+    ) {
+      throw error;
+    }
     console.log(
       `Error reading '${nxProjectGraph}'. Continue the process without the cache.`
     );
     console.log(error);
-  }
-
-  performance.mark('read project-graph:end');
-  performance.measure(
-    'read cache',
-    'read project-graph:start',
-    'read project-graph:end'
-  );
-
-  if (projectGraphCache?.errors.length > 0) {
-    throw new ProjectGraphError(
-      projectGraphCache.errors,
-      projectGraphCache,
-      readSourceMapsCache()
+    return null;
+  } finally {
+    performance.mark('read project-graph:end');
+    performance.measure(
+      'read cache',
+      'read project-graph:start',
+      'read project-graph:end'
     );
   }
-
-  return projectGraphCache ?? null;
 }
 
 export function readSourceMapsCache(): null | ConfigurationSourceMaps {

@@ -15,6 +15,14 @@ export type ProjectGraphErrorTypes =
   | ProcessDependenciesError
   | WorkspaceValidityError;
 
+export class StaleProjectGraphCacheError extends Error {
+  constructor() {
+    super(
+      'The project graph cache was stale. Ensure that it has been recently created before using `readCachedProjectGraph`.'
+    );
+  }
+}
+
 export class ProjectGraphError extends Error {
   readonly #partialProjectGraph: ProjectGraph;
   readonly #partialSourceMaps: ConfigurationSourceMaps;

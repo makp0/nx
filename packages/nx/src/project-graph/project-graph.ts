@@ -21,7 +21,7 @@ import {
   isAggregateProjectGraphError,
   ProjectConfigurationsError,
   ProjectGraphError,
-  ProjectGraphErrorTypes,
+  StaleProjectGraphCacheError,
 } from './error-types';
 import {
   readFileMapCache,
@@ -43,12 +43,14 @@ import { DelayedSpinner } from '../utils/delayed-spinner';
 
 /**
  * Synchronously reads the latest cached copy of the workspace's ProjectGraph.
+ *
+ * @param {number} [minimumComputedAt] - The minimum timestamp that the cached ProjectGraph must have been computed at.
  * @throws {Error} if there is no cached ProjectGraph to read from
  */
-export function readCachedProjectGraph(): ProjectGraph & {
-  computedAt?: number;
-} {
-  const projectGraphCache = readProjectGraphCache();
+export function readCachedProjectGraph(
+  minimumComputedAt?: number
+): ProjectGraph {
+  const projectGraphCache = readProjectGraphCache(minimumComputedAt);
   if (!projectGraphCache) {
     const angularSpecificError = fileExists(`${workspaceRoot}/angular.json`)
       ? stripIndents`
@@ -212,8 +214,8 @@ export function handleProjectGraphError(opts: { exitOnError: boolean }, e) {
   }
 }
 
-async function readCachedGraphAndHydrateFileMap() {
-  const graph = readCachedProjectGraph();
+async function readCachedGraphAndHydrateFileMap(minimumComputedAt?: number) {
+  const graph = readCachedProjectGraph(minimumComputedAt);
   const projectRootMap = Object.fromEntries(
     Object.entries(graph.nodes).map(([project, { data }]) => [
       data.root,
@@ -303,9 +305,12 @@ export async function createProjectGraphAndSourceMapsAsync(
       // - All of the waiting processes to build the graph
       // - Even one of the processes building the graph on a legitimate error
 
-      const graph = await readCachedGraphAndHydrateFileMap();
-      // The graph is fresh because it was computed after we started waiting
-      if (graph.computedAt > start) {
+      try {
+        // Ensuring that computedAt was after this process started
+        // waiting for the graph to complete, means that the graph
+        // was computed by the process was already working.
+        const graph = await readCachedGraphAndHydrateFileMap(start);
+
         const sourceMaps = readSourceMapsCache();
         if (!sourceMaps) {
           throw new Error(
@@ -317,6 +322,14 @@ export async function createProjectGraphAndSourceMapsAsync(
           projectGraph: graph,
           sourceMaps,
         };
+      } catch (e) {
+        // If the error is that the cached graph is stale after unlock,
+        // the process that was working on the graph must have been canceled,
+        // so we will fall through to the normal flow to ensure
+        // its created by one of the processes that was waiting
+        if (!(e instanceof StaleProjectGraphCacheError)) {
+          throw e;
+        }
       }
       locked = lock.check();
     }
