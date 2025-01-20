@@ -90,8 +90,7 @@ jobs:
       NX_CLOUD_DTE_V2: 'true'
       NX_CLOUD_DTE_SUMMARY: 'true'
       NX_CLOUD_NO_TIMEOUTS: 'true'
-      NX_CLOUD_SKIP_WORKSPACE_DATA_CACHE: 'true'
-      NX_FORCE_REUSE_CACHED_GRAPH: 'true'
+      NX_CLOUD_SKIP_WORKSPACE_DATA_CACHE: 'false'
     steps:
       - checkout
       - nx/set-shas:
@@ -107,12 +106,15 @@ jobs:
       - run:
           name: Print env
           command: echo $NX_CACHE_PROJECT_GRAPH
-#      - run:
-#          name: Print Workspace Cache
-#          command: ls -lah .nx/workspace-data
+      - run:
+          name: Save workspace cache files
+          command: cp -r .nx/workspace-data .nx/temp-workspace-data
       - run:
           name: Project Graph Cold
           command: pnpm nx show projects
+      - run:
+          name: Diff workspace cache files
+          command: diff -r .nx/workspace-data .nx/temp-workspace-data
       - run:
           name: Print Workspace Cache 2
           command: ls -lah .nx/workspace-data
