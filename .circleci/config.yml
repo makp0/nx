@@ -107,17 +107,22 @@ jobs:
           name: Print env
           command: echo $NX_CACHE_PROJECT_GRAPH
       - run:
+          name: Echo workspace cache files
+          command: ls -la .nx/workspace-data
+      - run:
           name: Save workspace cache files
           command: cp -r .nx/workspace-data .nx/temp-workspace-data
       - run:
           name: Project Graph Cold
           command: pnpm nx show projects
-      - run:
-          name: Diff workspace cache files
-          command: diff -r .nx/workspace-data .nx/temp-workspace-data
+
       - run:
           name: Print Workspace Cache 2
           command: ls -lah .nx/workspace-data
+      - run:
+          name: Diff workspace cache files
+          command: diff -qr .nx/workspace-data .nx/temp-workspace-data
+
       - run:
           name: Project Graph Warm
           command: pnpm nx show projects
