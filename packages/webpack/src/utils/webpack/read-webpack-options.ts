@@ -13,42 +13,54 @@ import { readNxJsonFromDisk } from 'nx/src/devkit-internals';
  */
 export async function readWebpackOptions(
   webpackConfig: unknown
-): Promise<Configuration> {
-  let config: Configuration;
-  if (isNxWebpackComposablePlugin(webpackConfig)) {
-    config = await webpackConfig(
-      {},
-      {
-        // These values are only used during build-time, so passing stubs here just to read out
-        // the returned config object.
-        options: {
-          root: workspaceRoot,
-          projectRoot: '',
-          sourceRoot: '',
-          outputFileName: undefined,
-          outputPath: undefined,
-          assets: undefined,
-          useTsconfigPaths: undefined,
+): Promise<Configuration[]> {
+  const configs: Configuration[] = [];
+
+  const resolveConfig = async (config: Configuration) => {
+    if (isNxWebpackComposablePlugin(webpackConfig)) {
+      config = await webpackConfig(
+        {},
+        {
+          // These values are only used during build-time, so passing stubs here just to read out
+          // the returned config object.
+          options: {
+            root: workspaceRoot,
+            projectRoot: '',
+            sourceRoot: '',
+            outputFileName: undefined,
+            outputPath: undefined,
+            assets: undefined,
+            useTsconfigPaths: undefined,
+          },
+          context: {
+            root: workspaceRoot,
+            cwd: undefined,
+            isVerbose: false,
+            projectsConfigurations: null,
+            projectGraph: null,
+            nxJsonConfiguration: readNxJsonFromDisk(workspaceRoot),
+          },
+        }
+      );
+    } else if (typeof webpackConfig === 'function') {
+      config = await webpackConfig(
+        {
+          production: true, // we want the production build options
         },
-        context: {
-          root: workspaceRoot,
-          cwd: undefined,
-          isVerbose: false,
-          projectsConfigurations: null,
-          projectGraph: null,
-          nxJsonConfiguration: readNxJsonFromDisk(workspaceRoot),
-        },
-      }
-    );
-  } else if (typeof webpackConfig === 'function') {
-    config = await webpackConfig(
-      {
-        production: true, // we want the production build options
-      },
-      {}
-    );
+        {}
+      );
+    } else {
+      config = webpackConfig;
+    }
+    return config;
+  };
+
+  if (Array.isArray(webpackConfig)) {
+    for (const config of webpackConfig) {
+      configs.push(await resolveConfig(config));
+    }
   } else {
-    config = webpackConfig;
+    configs.push(await resolveConfig(webpackConfig));
   }
-  return config;
+  return configs;
 }
